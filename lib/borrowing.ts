@@ -1,5 +1,6 @@
 import { supabase } from "./supabase"
 
+// Perubahan: properti 'books' sekarang adalah sebuah array
 export interface Borrowing {
   id: string
   user_id: string
@@ -10,11 +11,14 @@ export interface Borrowing {
   status: "active" | "returned" | "overdue"
   created_at: string
   updated_at: string
-  books?: {
+  renewal_count: number
+  books?: Array<{
     id: string
     title: string
     isbn: string
     cover_url: string
+    available_copies: number
+    total_copies: number
     categories: {
       name: string
     }
@@ -24,7 +28,7 @@ export interface Borrowing {
         last_name: string
       }
     }>
-  }
+  }>
 }
 
 export async function borrowBook(userId: string, bookId: string): Promise<{ success: boolean; message: string }> {
@@ -134,15 +138,18 @@ export async function returnBook(borrowingId: string): Promise<{ success: boolea
       return { success: false, message: "Gagal mengembalikan buku" }
     }
 
-    // Update available copies
-    if (borrowing.books) {
+    // Perbaikan: Akses object buku dari elemen pertama array
+    const bookData = Array.isArray(borrowing.books) ? borrowing.books[0] : borrowing.books;
+
+    if (bookData) {
       const { error: updateBookError } = await supabase
         .from("books")
-        .update({ available_copies: borrowing.books.available_copies + 1 })
+        .update({ available_copies: bookData.available_copies + 1 })
         .eq("id", borrowing.book_id)
 
       if (updateBookError) {
         console.error("Error updating book availability:", updateBookError)
+        // Consider rolling back the borrowing status update here in a real-world scenario
         return { success: false, message: "Gagal mengupdate ketersediaan buku" }
       }
     }
@@ -205,7 +212,6 @@ export async function extendBorrowing(borrowingId: string): Promise<{ success: b
       return { success: false, message: "Peminjaman tidak ditemukan" }
     }
 
-    // Check renewal limit (max 2 renewals)
     const renewalCount = borrowing.renewal_count || 0
     if (renewalCount >= 2) {
       return { success: false, message: "Batas perpanjangan sudah tercapai (maksimal 2 kali)" }

@@ -354,10 +354,10 @@ export default function DashboardPage() {
                         {activeBorrowings.slice(0, 3).map((borrowing) => (
                           <div key={borrowing.id} className="flex items-center space-x-4">
                             <div className="w-12 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded flex items-center justify-center">
-                              {borrowing.books?.cover_url ? (
+                              {borrowing.books?.[0]?.cover_url ? (
                                 <img
-                                  src={borrowing.books.cover_url || "/placeholder.svg"}
-                                  alt={borrowing.books.title}
+                                  src={borrowing.books[0].cover_url || "/placeholder.svg"}
+                                  alt={borrowing.books[0].title}
                                   className="w-full h-full object-cover rounded"
                                 />
                               ) : (
@@ -365,10 +365,10 @@ export default function DashboardPage() {
                               )}
                             </div>
                             <div className="flex-1">
-                              <h4 className="font-medium">{borrowing.books?.title}</h4>
+                              <h4 className="font-medium">{borrowing.books?.[0]?.title}</h4>
                               <p className="text-sm text-gray-600">
-                                {borrowing.books?.book_authors?.[0]?.authors?.first_name}{" "}
-                                {borrowing.books?.book_authors?.[0]?.authors?.last_name}
+                                {borrowing.books?.[0]?.book_authors?.[0]?.authors?.first_name}{" "}
+                                {borrowing.books?.[0]?.book_authors?.[0]?.authors?.last_name}
                               </p>
                               <div className="flex items-center space-x-2 mt-1">
                                 {getStatusBadge(borrowing.status, borrowing.due_date)}
@@ -397,7 +397,7 @@ export default function DashboardPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
-                        {borrowingHistory.slice(0, 5).map((borrowing, index) => (
+                        {borrowingHistory.slice(0, 5).map((borrowing) => (
                           <div key={borrowing.id} className="flex items-center space-x-3">
                             <div
                               className={`w-2 h-2 rounded-full ${
@@ -411,7 +411,7 @@ export default function DashboardPage() {
                             <div className="flex-1">
                               <p className="text-sm">
                                 {borrowing.status === "returned" ? "Mengembalikan" : "Meminjam"} "
-                                {borrowing.books?.title}"
+                                {borrowing.books?.[0]?.title}"
                               </p>
                               <p className="text-xs text-gray-500">
                                 {new Date(borrowing.borrowed_at).toLocaleDateString("id-ID")}
@@ -438,10 +438,10 @@ export default function DashboardPage() {
                       <CardContent className="p-6">
                         <div className="flex space-x-4">
                           <div className="w-20 h-28 bg-gradient-to-br from-blue-100 to-blue-200 rounded flex items-center justify-center">
-                            {borrowing.books?.cover_url ? (
+                            {borrowing.books?.[0]?.cover_url ? (
                               <img
-                                src={borrowing.books.cover_url || "/placeholder.svg"}
-                                alt={borrowing.books.title}
+                                src={borrowing.books[0].cover_url || "/placeholder.svg"}
+                                alt={borrowing.books[0].title}
                                 className="w-full h-full object-cover rounded"
                               />
                             ) : (
@@ -449,10 +449,10 @@ export default function DashboardPage() {
                             )}
                           </div>
                           <div className="flex-1">
-                            <h3 className="font-semibold mb-1">{borrowing.books?.title}</h3>
+                            <h3 className="font-semibold mb-1">{borrowing.books?.[0]?.title}</h3>
                             <p className="text-sm text-gray-600 mb-2">
-                              {borrowing.books?.book_authors?.[0]?.authors?.first_name}{" "}
-                              {borrowing.books?.book_authors?.[0]?.authors?.last_name}
+                              {borrowing.books?.[0]?.book_authors?.[0]?.authors?.first_name}{" "}
+                              {borrowing.books?.[0]?.book_authors?.[0]?.authors?.last_name}
                             </p>
                             <div className="space-y-2">
                               <div className="flex justify-between text-sm">
@@ -515,10 +515,10 @@ export default function DashboardPage() {
                         <div key={borrowing.id} className="flex items-center justify-between p-4 border rounded-lg">
                           <div className="flex items-center space-x-4">
                             <div className="w-12 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded flex items-center justify-center">
-                              {borrowing.books?.cover_url ? (
+                              {borrowing.books?.[0]?.cover_url ? (
                                 <img
-                                  src={borrowing.books.cover_url || "/placeholder.svg"}
-                                  alt={borrowing.books.title}
+                                  src={borrowing.books[0].cover_url || "/placeholder.svg"}
+                                  alt={borrowing.books[0].title}
                                   className="w-full h-full object-cover rounded"
                                 />
                               ) : (
@@ -526,10 +526,10 @@ export default function DashboardPage() {
                               )}
                             </div>
                             <div>
-                              <h4 className="font-semibold">{borrowing.books?.title}</h4>
+                              <h4 className="font-semibold">{borrowing.books?.[0]?.title}</h4>
                               <p className="text-sm text-gray-600">
-                                {borrowing.books?.book_authors?.[0]?.authors?.first_name}{" "}
-                                {borrowing.books?.book_authors?.[0]?.authors?.last_name}
+                                {borrowing.books?.[0]?.book_authors?.[0]?.authors?.first_name}{" "}
+                                {borrowing.books?.[0]?.book_authors?.[0]?.authors?.last_name}
                               </p>
                               <p className="text-xs text-gray-500">
                                 {new Date(borrowing.borrowed_at).toLocaleDateString("id-ID")} -{" "}

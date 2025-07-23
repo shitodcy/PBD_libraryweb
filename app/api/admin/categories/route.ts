@@ -20,32 +20,7 @@ export async function GET() {
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
 
-    const { data: category, error } = await supabaseAdmin
-      .from("categories")
-      .insert([
-        {
-          name: body.name,
-          description: body.description,
-        },
-      ])
-      .select()
-      .single()
-
-    if (error) {
-      console.error("Error creating category:", error)
-      return NextResponse.json({ error: "Failed to create category" }, { status: 500 })
-    }
-
-    return NextResponse.json({ category })
-  } catch (error) {
-    console.error("API error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
-  }
-}
 
 export async function PUT(request: NextRequest) {
   try {
