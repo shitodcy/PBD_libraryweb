@@ -1,9 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/database-connection"
+import { createClient } from "@/lib/supabase/server"
 
 export async function GET() {
   try {
-    const { data: authors, error } = await supabaseAdmin
+    // Buat klien di dalam fungsi
+    const supabase = await createClient()
+
+    const { data: authors, error } = await supabase
       .from("authors")
       .select("*")
       .order("last_name", { ascending: true })
@@ -22,9 +25,11 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Buat klien di dalam fungsi
+    const supabase = await createClient()
     const body = await request.json()
 
-    const { data: author, error } = await supabaseAdmin
+    const { data: author, error } = await supabase
       .from("authors")
       .insert([
         {
@@ -51,9 +56,11 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    // Buat klien di dalam fungsi
+    const supabase = await createClient()
     const body = await request.json()
 
-    const { data: author, error } = await supabaseAdmin
+    const { data: author, error } = await supabase
       .from("authors")
       .update({
         first_name: body.first_name,
@@ -79,9 +86,11 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    // Buat klien di dalam fungsi
+    const supabase = await createClient()
     const body = await request.json()
 
-    const { error } = await supabaseAdmin.from("authors").delete().eq("id", body.id)
+    const { error } = await supabase.from("authors").delete().eq("id", body.id)
 
     if (error) {
       console.error("Error deleting author:", error)
