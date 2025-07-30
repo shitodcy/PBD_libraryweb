@@ -1,7 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getBookById } from "@/lib/books"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     const book = await getBookById(params.id)
 
@@ -12,6 +15,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json({ book })
   } catch (error) {
     console.error("Error in book detail API route:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    )
   }
 }

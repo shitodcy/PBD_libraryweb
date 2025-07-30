@@ -1,8 +1,7 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 
 export async function middleware(req: NextRequest) {
-  // We need to create a response and Supabase client configured to use cookies.
   const res = NextResponse.next()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,19 +21,25 @@ export async function middleware(req: NextRequest) {
     }
   )
 
-  // Get the session to refresh it if needed.
   const { data: { session } } = await supabase.auth.getSession()
 
-  const isProtectedRoute = req.nextUrl.pathname.startsWith('/dashboard')
-  const isAuthRoute = req.nextUrl.pathname.startsWith('/login')
+  const pathname = req.nextUrl.pathname
 
-  // 1. If user is not logged in and tries to access a protected route, redirect to login.
+  // ✅ PERBAIKAN: Definisikan semua rute yang perlu dilindungi
+  const protectedRoutes = ['/dashboard', '/admin']
+  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
+
+  const isAuthRoute = pathname.startsWith('/login')
+
+  // 1. Jika pengguna belum login dan mencoba akses rute terproteksi, arahkan ke login.
   if (isProtectedRoute && !session) {
     return NextResponse.redirect(new URL('/login', req.url))
   }
 
-  // 2. If user is logged in and tries to access the login page, redirect to dashboard.
+  // 2. Jika pengguna sudah login dan mencoba akses halaman login, arahkan ke dashboard.
   if (isAuthRoute && session) {
+    // Middleware tidak tahu peran pengguna, jadi kita arahkan ke dashboard umum.
+    // Logika di halaman login sudah cukup untuk mengarahkan ke dashboard admin jika perlu.
     return NextResponse.redirect(new URL('/dashboard', req.url))
   }
 
