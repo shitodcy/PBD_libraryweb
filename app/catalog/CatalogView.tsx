@@ -11,9 +11,18 @@ import { Badge } from "@/components/ui/badge"
 import { BookOpen, Search, Star, Filter, ArrowLeft } from "lucide-react"
 
 // --- INTERFACES --- (Tidak ada perubahan)
+interface BookAuthor {
+  authors: {
+    name: string;
+  };
+}
+
 interface Book {
   id: number;
   title: string;
+  available_quantity: number;
+  book_authors?: BookAuthor[];
+  rating?: number; // Tambahkan properti rating
   // ... properti lainnya
 }
 interface Category { id: number; name: string; }

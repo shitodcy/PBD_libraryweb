@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createBook, updateBook, deleteBook } from "@/app/admin/books/actions"; // Sesuaikan path jika perlu
+import { createBook, updateBook, deleteBook } from "@/app/api/admin/books/actions"; // Sesuaikan path jika perlu
 
 // Definisikan tipe data untuk props
 type Book = { id: string; [key: string]: any };

@@ -33,29 +33,7 @@ export default async function RootLayout({
   return (
     <html lang="id">
       <body className={inter.className}>
-        {/* ✅ 4. Tambahkan header dan navigasi */}
-        <header className="bg-white shadow-sm sticky top-0 z-50">
-          <nav className="container mx-auto flex h-16 items-center justify-between px-4">
-            <Link href="/" className="font-bold text-lg text-gray-800">
-              Perpustakaan Digital
-            </Link>
-            <div className="flex items-center gap-4">
-              {user ? (
-                <>
-                  <span className="text-sm text-gray-600">
-                    Halo, {user.email}
-                  </span>
-                  <LogoutButton />
-                </>
-              ) : (
-                <Link href="/login">
-                  <Button variant="outline">Login</Button>
-                </Link>
-              )}
-            </div>
-          </nav>
-        </header>
-
+        {/* Navbar atas telah dihapus sesuai permintaan */}
         <main>{children}</main>
       </body>
     </html>

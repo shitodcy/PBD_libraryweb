@@ -1,31 +1,47 @@
-import StatsView from "@/components/admin/StatsView";
-import BooksView from "@/components/admin/BooksView";
-import MembersView from "@/components/admin/MembersView";
-import BorrowingsView from "@/components/admin/BorrowingsView";
-import DashboardNav from "@/components/admin/DashboardNav"; // ✅ Impor komponen navigasi baru
+// app/admin/page.tsx
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import AdminDashboard from './AdminDashboard' // Komponen klien untuk UI
 
-interface DashboardPageProps {
-  searchParams: {
-    view?: string;
-  };
-}
+// Komponen ini berjalan di server
+export default async function AdminPage() {
+  const supabase = await createClient()
 
-export default async function AdminDashboardPage({ searchParams }: DashboardPageProps) {
-  const currentView = searchParams.view || "stats";
+  // 1. Ambil data sesi pengguna saat ini
+  const { data: { user } } = await supabase.auth.getUser()
 
+  // 2. Jika tidak ada pengguna yang login, alihkan ke halaman login
+  if (!user) {
+    return redirect('/login')
+  }
+
+  // 3. Ambil profil pengguna untuk memeriksa perannya (role)
+  const { data: profile } = await supabase
+    .from('profiles') // Pastikan Anda memiliki tabel 'profiles'
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  // 4. Jika profil tidak ditemukan atau perannya bukan 'admin', alihkan ke dashboard member
+  if (!profile || profile.role !== 'admin') {
+    return redirect('/dashboard')
+  }
+
+  // 5. Jika aman, muat semua data awal dari database
+  const [booksRes, categoriesRes, publishersRes, authorsRes] = await Promise.all([
+    supabase.from("books").select("*"),
+    supabase.from("categories").select("*"),
+    supabase.from("publishers").select("*"),
+    supabase.from("authors").select("*"),
+  ])
+
+  // 6. Kirim data ke komponen klien untuk ditampilkan
   return (
-    <div className="p-4 sm:p-6">
-      <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
-      
-      {/* ✅ Gunakan Client Component untuk navigasi yang interaktif */}
-      <DashboardNav />
-
-      <div>
-        {currentView === 'stats' && <StatsView />}
-        {currentView === 'books' && <BooksView />}
-        {currentView === 'members' && <MembersView />}
-        {currentView === 'borrowings' && <BorrowingsView />}
-      </div>
-    </div>
-  );
+    <AdminDashboard
+      initialBooks={booksRes.data ?? []}
+      initialCategories={categoriesRes.data ?? []}
+      initialPublishers={publishersRes.data ?? []}
+      initialAuthors={authorsRes.data ?? []}
+    />
+  )
 }
