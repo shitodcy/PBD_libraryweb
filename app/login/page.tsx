@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client' // <-- Logika baru
+import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -10,30 +10,48 @@ export default function LoginPage() {
   const [errorMsg, setErrorMsg] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const supabase = createClient() // <-- Logika baru
+  const supabase = createClient()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setErrorMsg('')
 
-    const { error } = await supabase.auth.signInWithPassword({
+    // 1. Coba untuk login
+    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
 
-    if (error) {
-      setErrorMsg(error.message)
+    if (loginError) {
+      setErrorMsg(loginError.message)
       setLoading(false)
       return
     }
 
-    // Pola yang benar dan andal: refresh halaman.
-    // Middleware akan menangani pengalihan ke dashboard.
-    router.refresh()
+    // ✅ PERBAIKAN: Jika login berhasil, periksa peran pengguna
+    if (loginData.user) {
+      // 2. Ambil data profil dari database
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', loginData.user.id)
+        .single()
+      
+      // 3. Arahkan berdasarkan peran
+      if (profile?.role === 'admin') {
+        router.push('/admin/dashboard') // Arahkan admin ke dashboard admin
+      } else {
+        router.push('/dashboard') // Arahkan pengguna biasa ke dashboard mereka
+      }
+    } else {
+      // Fallback jika user tidak ditemukan setelah login (jarang terjadi)
+      router.refresh()
+    }
+    
+    // setLoading(false) tidak diperlukan karena halaman akan di-redirect
   }
 
-  // Tampilan dari proyek asli Anda
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4">
       <div className="w-full max-w-md space-y-6 rounded-xl bg-white p-8 shadow-lg">

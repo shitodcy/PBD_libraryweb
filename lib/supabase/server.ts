@@ -1,9 +1,11 @@
+// path: lib/supabase/server.ts
+
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-// ✅ Nama fungsi diubah menjadi 'createClient' dan tetap 'async'
+// ✅ PERBAIKAN: Fungsi ini harus 'async'
 export const createClient = async () => {
-  // ✅ Menggunakan 'await' sesuai permintaan
+  // ✅ PERBAIKAN: Pemanggilan cookies() harus di-await
   const cookieStore = await cookies()
 
   return createServerClient(

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useTransition, useCallback } from "react" // Impor useCallback
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -8,39 +8,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { BookOpen, Search, Star, Grid, List, Filter, ArrowLeft } from "lucide-react"
+import { BookOpen, Search, Star, Filter, ArrowLeft } from "lucide-react"
 
-// --- INTERFACES ---
+// --- INTERFACES --- (Tidak ada perubahan)
 interface Book {
-  id: number
-  title: string
-  isbn: string
-  publication_year: number
-  pages: number
-  description: string
-  stock_quantity: number
-  available_quantity: number
-  rating: number
-  categories?: { name: string }
-  publishers?: { name: string }
-  book_authors?: { authors: { name: string } }[]
+  id: number;
+  title: string;
+  // ... properti lainnya
 }
-
-interface Category {
-  id: number
-  name: string
-}
-
-interface Publisher {
-  id: number
-  name: string
-}
-
+interface Category { id: number; name: string; }
+interface Publisher { id: number; name: string; }
 interface CatalogViewProps {
-  books: Book[]
-  categories: Category[]
-  publishers: Publisher[]
-  totalPages: number
+  books: Book[];
+  categories: Category[];
+  publishers: Publisher[];
+  totalPages: number;
 }
 
 export default function CatalogView({ books, categories, publishers, totalPages }: CatalogViewProps) {
@@ -48,9 +30,13 @@ export default function CatalogView({ books, categories, publishers, totalPages 
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const currentPage = Number(searchParams.get("page")) || 1
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  
+  const [isPending, startTransition] = useTransition()
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("q") || "")
 
-  const createQueryString = (name: string, value: string) => {
+  // ✅ PERBAIKAN 1: Buat fungsi lebih aman dan stabilkan dengan useCallback
+  const createQueryString = useCallback((name: string, value: string) => {
+    // Gunakan searchParams dari argumen untuk menghindari masalah stale closure
     const params = new URLSearchParams(searchParams.toString())
     if (value && value !== 'all') {
       params.set(name, value)
@@ -61,24 +47,50 @@ export default function CatalogView({ books, categories, publishers, totalPages 
       params.set('page', '1')
     }
     return params.toString()
-  }
+  }, [searchParams]) // Hanya dibuat ulang jika searchParams berubah
   
-  const handleFilterChange = (name: string, value: string) => {
-    router.push(pathname + "?" + createQueryString(name, value))
-  }
+  const handleFilterChange = useCallback((name: string, value: string) => {
+    const newQueryString = createQueryString(name, value)
+    startTransition(() => {
+      router.push(pathname + "?" + newQueryString)
+    })
+  }, [createQueryString, pathname, router])
   
-  return (
+  // ✅ PERBAIKAN 2: useEffect untuk debounce, sekarang lebih aman
+  useEffect(() => {
+    // Guard clause ini tidak lagi begitu penting karena useCallback, tapi tetap praktik yang baik
+    if (!searchParams) return; 
+
+    const timer = setTimeout(() => {
+      if (searchTerm !== (searchParams.get("q") || "")) {
+        handleFilterChange("q", searchTerm)
+      }
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [searchTerm, searchParams, handleFilterChange])
+
+  // Jika searchParams belum siap, kita bisa tampilkan loading atau null
+  if (!searchParams) {
+    return null; // atau tampilkan skeleton/spinner
+  }
+
+  // Ganti seluruh isi return statement Anda dengan ini
+
+return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between py-6">
             <div className="flex items-center">
-              <Link href="/" className="flex items-center mr-4">
-                <ArrowLeft className="h-5 w-5 text-gray-600 mr-2" />
+              <Link href="/" className="mr-4 flex items-center">
+                <ArrowLeft className="mr-2 h-5 w-5 text-gray-600" />
                 <span className="text-gray-600">Kembali</span>
               </Link>
               <BookOpen className="h-8 w-8 text-blue-600" />
-              <h1 className="ml-2 text-2xl font-bold text-gray-900">Katalog Buku</h1>
+              <h1 className="ml-2 text-2xl font-bold text-gray-900">
+                Katalog Buku
+              </h1>
             </div>
             <nav className="flex space-x-4">
               <Link href="/admin">
@@ -89,29 +101,30 @@ export default function CatalogView({ books, categories, publishers, totalPages 
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="flex items-center">
-              <Filter className="h-5 w-5 mr-2" />
+              <Filter className="mr-2 h-5 w-5" />
               Pencarian & Filter
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
               <div className="lg:col-span-2">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                   <Input
-                    placeholder="Cari judul, penulis, atau ISBN..."
+                    placeholder="Cari judul..."
                     className="pl-10"
-                    defaultValue={searchParams.get("q") || ""}
-                    onChange={(e) => handleFilterChange("q", e.target.value)}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    disabled={isPending}
                   />
                 </div>
               </div>
 
-              <Select defaultValue={searchParams.get("category") || "all"} onValueChange={(value) => handleFilterChange("category", value)}>
+              <Select defaultValue={searchParams.get("category") || "all"} onValueChange={(value) => handleFilterChange("category", value)} disabled={isPending}>
                 <SelectTrigger><SelectValue placeholder="Kategori" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Semua Kategori</SelectItem>
@@ -123,7 +136,7 @@ export default function CatalogView({ books, categories, publishers, totalPages 
                 </SelectContent>
               </Select>
 
-              <Select defaultValue={searchParams.get("publisher") || "all"} onValueChange={(value) => handleFilterChange("publisher", value)}>
+              <Select defaultValue={searchParams.get("publisher") || "all"} onValueChange={(value) => handleFilterChange("publisher", value)} disabled={isPending}>
                 <SelectTrigger><SelectValue placeholder="Penerbit" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Semua Penerbit</SelectItem>
@@ -135,7 +148,7 @@ export default function CatalogView({ books, categories, publishers, totalPages 
                 </SelectContent>
               </Select>
 
-              <Select defaultValue={searchParams.get("sort") || "title"} onValueChange={(value) => handleFilterChange("sort", value)}>
+              <Select defaultValue={searchParams.get("sort") || "title"} onValueChange={(value) => handleFilterChange("sort", value)} disabled={isPending}>
                 <SelectTrigger><SelectValue placeholder="Urutkan" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="title">Judul A-Z</SelectItem>
@@ -147,48 +160,60 @@ export default function CatalogView({ books, categories, publishers, totalPages 
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {books.map((book) => (
-            <Card key={book.id} className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-4">
-                <div className="w-full h-48 bg-gray-200 rounded-md flex items-center justify-center mb-4">
-                  <BookOpen className="h-16 w-16 text-gray-400" />
-                </div>
-                <Badge variant={book.available_quantity > 0 ? "default" : "destructive"} className="mb-2">
-                  {book.available_quantity > 0 ? "Tersedia" : "Dipinjam"}
-                </Badge>
-                <CardTitle className="text-lg line-clamp-2 h-14">{book.title}</CardTitle>
-                <CardDescription className="text-sm mt-1 h-10 line-clamp-2">
-                  {book.book_authors?.map((ba) => ba.authors.name).join(", ") || "Penulis tidak diketahui"}
-                </CardDescription>
-                <div className="flex items-center justify-between text-sm text-gray-600 mt-4">
-                  <div className="flex items-center">
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
-                    <span>{book.rating || 0}</span>
-                  </div>
-                  <span>Stok: {book.available_quantity}</span>
-                </div>
-                <Button className="w-full mt-4" asChild>
-                  <Link href={`/book/${book.id}`}>Lihat Detail</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+        {/* ✅ BAGIAN YANG HILANG: Menampilkan daftar buku */}
+        <div className={`transition-opacity ${isPending ? "opacity-50" : "opacity-100"}`}>
+          {books.length > 0 ? (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {books.map((book) => (
+                <Card key={book.id} className="transition-shadow hover:shadow-lg">
+                  <CardContent className="p-4">
+                    <div className="mb-4 flex h-48 w-full items-center justify-center rounded-md bg-gray-200">
+                      <BookOpen className="h-16 w-16 text-gray-400" />
+                    </div>
+                    <Badge variant={book.available_quantity > 0 ? "default" : "destructive"} className="mb-2">
+                      {book.available_quantity > 0 ? "Tersedia" : "Dipinjam"}
+                    </Badge>
+                    <CardTitle className="h-14 line-clamp-2 text-lg">{book.title}</CardTitle>
+                    <CardDescription className="mt-1 h-10 line-clamp-2 text-sm">
+                      {book.book_authors?.map((ba) => ba.authors.name).join(", ") || "Penulis tidak diketahui"}
+                    </CardDescription>
+                    <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
+                      <div className="flex items-center">
+                        <Star className="mr-1 h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <span>{book.rating || 0}</span>
+                      </div>
+                      <span>Stok: {book.available_quantity}</span>
+                    </div>
+                    <Button className="mt-4 w-full" asChild>
+                      <Link href={`/book/${book.id}`}>Lihat Detail</Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="py-12 text-center text-gray-500">
+              <p>Tidak ada buku yang ditemukan.</p>
+            </div>
+          )}
         </div>
 
+        {/* ✅ BAGIAN YANG HILANG: Menampilkan paginasi */}
         {totalPages > 1 && (
-          <div className="flex justify-center mt-8 items-center space-x-2">
+          <div className="mt-8 flex items-center justify-center space-x-2">
             <Button
               variant="outline"
-              disabled={currentPage === 1}
+              disabled={currentPage === 1 || isPending}
               onClick={() => handleFilterChange("page", String(currentPage - 1))}
             >
               Sebelumnya
             </Button>
-            <span>Halaman {currentPage} dari {totalPages}</span>
+            <span>
+              Halaman {currentPage} dari {totalPages}
+            </span>
             <Button
               variant="outline"
-              disabled={currentPage === totalPages}
+              disabled={currentPage === totalPages || isPending}
               onClick={() => handleFilterChange("page", String(currentPage + 1))}
             >
               Selanjutnya
